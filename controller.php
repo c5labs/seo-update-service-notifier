@@ -79,7 +79,7 @@ class Controller extends Package
      *
      * @var string
      */
-    protected $pkgHandle = 'seo_update_service_notifier';
+    protected $pkgHandle = 'seo-update-service-notifier';
 
     /**
      * The packages version.

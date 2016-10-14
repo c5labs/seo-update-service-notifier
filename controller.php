@@ -61,18 +61,6 @@ class Controller extends Package
     protected $pkgAutoloaderMapCoreExtensions = false;
 
     /**
-     * Package class autoloader registrations
-     * The package install helper class, included with this boilerplate,
-     * is activated by default.
-     *
-     * @see https://goo.gl/4wyRtH
-     * @var array
-     */
-    protected $pkgAutoloaderRegistries = [
-        //'src/MyVendor/Statistics' => '\MyVendor\ConcreteStatistics'
-    ];
-
-    /**
      * The packages handle.
      * Note that this must be unique in the
      * entire concrete5 package ecosystem.
@@ -108,16 +96,8 @@ class Controller extends Package
      * @var array
      */
     protected $providers = [
-        // Register your concrete5 service providers here
         'Concrete\Package\SeoUpdateServiceNotifier\Src\Providers\UpdateServiceNotifierServiceProvider',
     ];
-
-    /**
-     * How often should we allow pinging?
-     *
-     * @var integer
-     */
-    protected $rate_limit_ttl = 43200; // Every 12 hours
 
     /**
      * Register the packages defined service providers.
@@ -143,76 +123,8 @@ class Controller extends Package
         // Register defined service providers
         $this->registerServiceProviders();
 
-        // Plugin the event listeners.
-        $this->addEventListeners();
-    }
-
-    /**
-     * Get the list of update service URLs to ping.
-     *
-     * @return array
-     */
-    protected function getUpdateServiceUrls()
-    {
-        return [
-            'https://requestb.in/1i2ftut1'
-        ];
-    }
-
-    /**
-     * Checks to see whether we should ping the update services.
-     * Currently this only checks that we are not above our rate limit.
-     *
-     * @return boolean
-     */
-    protected function canPing()
-    {
-        $cache = Core::make('cache/expensive');
-        $item = $cache->getItem('seo.update.notifier.expiry');
-
-        if ($item->isMiss()) {
-            $item->set(time() + $this->rate_limit_ttl, $this->rate_limit_ttl);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Notifys update services that a page has been added / updated
-     * and should be (re)indexed.
-     *
-     * @param  \Page  $page [description]
-     * @return boolean
-     */
-    protected function pingPage(\Page $page)
-    {
-        if ($this->canPing()) {
-            $notifier = \Core::make('seo.update.notifier');
-
-            return $notifier->ping(
-                $this->getUpdateServiceUrls(),
-                \Config::get('concrete.site'),
-                \View::url('/'),
-                \View::url($page->getCollectionPath())
-            );
-        }
-    }
-
-    /**
-     * Wires the page event listeners to the update service
-     * notification service.
-     *
-     * @return  void
-     */
-    public function addEventListeners()
-    {
-        \Events::addListener('on_page_version_approve', function($event) {
-            $page_id = $event->getCollectionVersionObject()->getCollectionID();
-            $page = \Page::getById($page_id);
-            $this->pingPage($page);
-        });
+        // Listen for page approvals so we can ping the update services.
+        Core::make('seo.update.notifier')->listen();
     }
 
     /**
@@ -222,11 +134,13 @@ class Controller extends Package
      */
     public function install()
     {
-        // Add your custom logic here that needs to be executed BEFORE package install.
-
         $pkg = parent::install();
 
-        // Add your custom logic here that needs to be executed AFTER package install.
+        // Install the dashboard page.
+        $sp = \Concrete\Core\Page\Single::add('/dashboard/system/seo/notifications', $pkg);
+        $sp->update([
+            'cName' => 'Update Services',
+        ]);
 
         return $pkg;
     }
@@ -238,11 +152,7 @@ class Controller extends Package
      */
     public function upgrade()
     {
-        // Add your custom logic here that needs to be executed BEFORE package install.
-
         parent::upgrade();
-
-        // Add your custom logic here that needs to be executed AFTER package upgrade.
     }
 
     /**
@@ -252,10 +162,6 @@ class Controller extends Package
      */
     public function uninstall()
     {
-        // Add your custom logic here that needs to be executed BEFORE package uninstall.
-
         parent::uninstall();
-
-        // Add your custom logic here that needs to be executed AFTER package uninstall.
     }
 }

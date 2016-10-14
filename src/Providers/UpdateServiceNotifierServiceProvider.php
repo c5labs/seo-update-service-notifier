@@ -23,14 +23,5 @@ class UpdateServiceNotifierServiceProvider extends Provider
             'seo.update.notifier',
             '\Concrete\Package\SeoUpdateServiceNotifier\Src\Helpers\UpdateServiceNotifier'
         );
-
-        // After binding our helpers like this, we can then use \Core::make('boilerplate/helper') to
-        // get an instance of our helper anywhere within concrete.
-    }
-
-    public function boot()
-    {
-        // Code included here will be executed after all service providers have been
-        // registered and the CMS is booting.
     }
 }

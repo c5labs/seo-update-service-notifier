@@ -79,9 +79,16 @@ class UpdateServiceNotifier
     public function listen()
     {
         if ($this->hasValidConfiguration()) {
+
             Events::addListener('on_page_version_approve', function($event) {
-                $page_id = $event->getCollectionVersionObject()->getCollectionID();
-                $page = Page::getById($page_id);
+                $page = $event->getPageObject();
+                if (! $page->isPageDraft()) {
+                    $this->pingPage($page);
+                }
+            });
+
+            Events::addListener('on_page_type_publish', function($event) {
+                $page = $event->getPageObject();
                 $this->pingPage($page);
             });
         }
